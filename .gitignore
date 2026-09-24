@@ -1,0 +1,13 @@
+# Maven 构建产物
+target/
+
+# IntelliJ IDEA 本地配置
+.idea/
+*.iml
+
+# Java 编译输出
+out/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
