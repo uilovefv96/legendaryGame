@@ -36,7 +36,7 @@ Unity 客户端
 
 ## 3. 当前项目中如何使用
 
-当前代码只完成了 Netty 服务端骨架，还没有完成完整协议编解码和消息分发。
+当前代码已经完成 Netty 服务端骨架、长度字段分帧、自定义消息头、Protobuf 编解码、轻量消息分发和登录 Session 注册。
 
 主要入口：
 
@@ -63,7 +63,10 @@ ChannelPipeline
     -> LengthFieldBasedFrameDecoder
     -> GameMessageDecoder
     -> GameMessageEncoder
+    -> GameMessageDispatcher
 ```
+
+当前 `GameMessageDispatcher` 只处理轻量逻辑：登录注册和心跳响应。后续移动、攻击、进入场景等消息不会在 Netty Worker 线程里直接修改场景，而是投递到场景命令队列。
 
 后续还会接入：
 
@@ -71,8 +74,10 @@ ChannelPipeline
 ChannelPipeline
     -> LoggingHandler
     -> LengthFieldBasedFrameDecoder
-    -> 消息分发处理器
-    -> Session / Scene CommandQueue
+    -> GameMessageDecoder
+    -> GameMessageEncoder
+    -> GameMessageDispatcher
+    -> Scene CommandQueue
 ```
 
 ## 4. 核心概念
@@ -92,7 +97,7 @@ ChannelPipeline
 ServerBootstrap bootstrap = new ServerBootstrap()
         .group(bossGroup, workerGroup)
         .channel(NioServerSocketChannel.class)
-        .childHandler(new GameChannelInitializer())
+        .childHandler(new GameChannelInitializer(sessionRegistry))
         .childOption(ChannelOption.TCP_NODELAY, true)
         .childOption(ChannelOption.SO_KEEPALIVE, true);
 ```
@@ -189,7 +194,7 @@ new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 10, 4, 0, 0)
 - `0`：长度修正值。
 - `0`：解码后不丢弃任何头部字节。
 
-当前保留完整帧，是为了下一阶段继续读取自定义消息头。
+当前保留完整帧，是为了让后续 `GameMessageDecoder` 继续读取自定义消息头并解析 Protobuf body。
 
 ## 5. 为什么网络线程不直接执行游戏逻辑
 
@@ -219,16 +224,19 @@ Netty Worker 线程
 - 连接 Pipeline 初始化。
 - 日志处理器。
 - 长度字段分帧器。
+- 自定义 14 字节消息头。
+- Protobuf 编解码。
+- 登录消息分发。
+- 进程内 `SessionRegistry`。
+- 心跳响应。
 
 未实现：
 
-- 自定义消息头对象。
-- 消息头编码器和解码器。
-- Protobuf 消息体解码。
-- 消息类型路由。
-- Session 管理。
-- 心跳和空闲检测。
-- 登录、移动、攻击业务处理。
+- 重复登录和顶号策略。
+- 心跳超时和空闲检测。
+- 未登录请求的完整错误响应。
+- 进入场景、移动和攻击业务处理。
+- 场景命令队列接入。
 
 ## 7. 实验验证
 
@@ -245,7 +253,11 @@ Game server started
 3. 使用 TCP 客户端连接 `localhost:9000`。
 4. 观察 Netty 日志是否出现连接事件。
 
-后续接入编码器后，再增加半包、粘包和非法长度字段测试。
+当前已新增协议往返编解码、半包和登录心跳分发测试。聚焦验证命令：
+
+```powershell
+mvn -pl game-server/game-network -am test
+```
 
 ## 8. 常见误区
 

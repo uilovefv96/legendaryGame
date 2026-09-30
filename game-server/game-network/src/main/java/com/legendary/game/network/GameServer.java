@@ -1,5 +1,6 @@
 package com.legendary.game.network;
 
+import com.legendary.game.network.session.SessionRegistry;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -39,6 +40,8 @@ public final class GameServer implements AutoCloseable {
     private EventLoopGroup workerGroup;
     /** 监听端口成功后得到的服务端 Channel，用于等待关闭和主动关闭。 */
     private Channel serverChannel;
+    /** 当前进程内的在线连接注册表；后续登录、断线和场景入口都会通过它识别客户端身份。 */
+    private final SessionRegistry sessionRegistry = new SessionRegistry();
 
     /** 创建服务端配置对象；真正创建线程组和绑定端口发生在 {@link #start()}。 */
     public GameServer(int port) {
@@ -64,7 +67,7 @@ public final class GameServer implements AutoCloseable {
                 .group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 // 为每条客户端连接创建独立的 ChannelPipeline。
-                .childHandler(new GameChannelInitializer())
+                .childHandler(new GameChannelInitializer(sessionRegistry))
                 // TCP_NODELAY 禁用 Nagle 算法，减少小消息等待合并的延迟。
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 // 保持 TCP 层的连接存活探测；应用层心跳仍然需要后续单独实现。
