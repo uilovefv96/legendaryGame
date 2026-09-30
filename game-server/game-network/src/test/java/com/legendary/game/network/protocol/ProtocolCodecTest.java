@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.legendary.protocol.LoginRequest;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.Test;
 
 class ProtocolCodecTest {
@@ -41,7 +42,8 @@ class ProtocolCodecTest {
         frame.writeInt(1);
         frame.writeInt(0);
 
-        assertThrows(ProtocolException.class, () -> channel.writeInbound(frame));
+        DecoderException exception = assertThrows(DecoderException.class, () -> channel.writeInbound(frame));
+        assertTrue(exception.getCause() instanceof ProtocolException);
         channel.finishAndReleaseAll();
     }
 }
