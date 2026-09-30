@@ -73,10 +73,16 @@ game-protocol/target/generated-sources/protobuf/java/
 
 当前还未实现：
 
-- Java 网络层中的 Protobuf 解码器。
-- `messageType` 和具体 Protobuf 类型的映射。
 - C# 代码生成。
 - Bot 真实收发 Protobuf 消息。
+- 登录、移动和攻击的业务分发。
+
+当前 Java 网络层已经实现：
+
+- `MessageType` 到 Protobuf parser 的映射。
+- `GameMessageEncoder`：消息头和 Protobuf body 编码。
+- `GameMessageDecoder`：消息头校验和 Protobuf body 解码。
+- 使用 `EmbeddedChannel` 验证消息往返和半包分帧。
 
 ## 4. `.proto` 是什么
 
@@ -200,7 +206,7 @@ Protobuf body
 LengthFieldBasedFrameDecoder
     -> 根据 bodyLength 切出完整帧
 
-自定义消息头解码器
+GameMessageDecoder
     -> 读取 messageType、requestId、bodyLength
 
 Protobuf 解码器
@@ -261,9 +267,9 @@ message SceneSnapshot {
 当前阶段可以做的最小实验：
 
 1. 修改 `game_protocol.proto`。
-2. 执行 Maven 构建。
+2. 执行 Maven 构建和 `game-network` 聚焦测试。
 3. 查看 `target/generated-sources/protobuf/java/` 是否生成对应 Java 类。
-4. 在测试中使用 `toByteArray()` 和 `parseFrom()` 验证对象和字节之间的转换。
+4. 在 `ProtocolCodecTest` 和 `FrameDecoderTest` 中使用 `toByteArray()`、`parseFrom()` 和 `EmbeddedChannel` 验证对象、帧和字节之间的转换。
 
 后续应增加协议回归测试，例如：
 

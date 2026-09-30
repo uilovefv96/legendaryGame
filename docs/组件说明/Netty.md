@@ -61,16 +61,16 @@ GameServerApplication.main
 ChannelPipeline
     -> LoggingHandler
     -> LengthFieldBasedFrameDecoder
+    -> GameMessageDecoder
+    -> GameMessageEncoder
 ```
 
-下一阶段会继续接入：
+后续还会接入：
 
 ```text
 ChannelPipeline
     -> LoggingHandler
     -> LengthFieldBasedFrameDecoder
-    -> 自定义消息头解码器
-    -> Protobuf 消息体解码器
     -> 消息分发处理器
     -> Session / Scene CommandQueue
 ```

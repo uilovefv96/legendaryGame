@@ -10,9 +10,15 @@
     </parent>
     <artifactId>game-network</artifactId>
     <dependencies>
+        <dependency>
+            <groupId>com.legendary.game</groupId>
+            <artifactId>game-protocol</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency><groupId>io.netty</groupId><artifactId>netty-transport</artifactId></dependency>
         <dependency><groupId>io.netty</groupId><artifactId>netty-handler</artifactId></dependency>
         <dependency><groupId>io.netty</groupId><artifactId>netty-codec</artifactId></dependency>
         <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId><version>${slf4j.version}</version></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>

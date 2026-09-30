@@ -6,6 +6,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import com.legendary.game.network.protocol.GameMessageDecoder;
+import com.legendary.game.network.protocol.GameMessageEncoder;
 
 /**
  * 为每条客户端 TCP 连接初始化 {@link ChannelPipeline}。
@@ -14,8 +16,9 @@ import io.netty.handler.logging.LoggingHandler;
  * 理解成一条处理链：入站字节从前往后经过解码器，出站消息按相反方向经过编码器。
  * 后续会在这里加入自定义消息头解码、Protobuf 解码、消息分发和连接生命周期处理器。</p>
  *
- * <p>当前阶段故意只安装日志处理器和长度字段分帧器，先单独观察 TCP 字节流如何被
- * 切成完整帧，再接入业务协议。这样可以把“传输层分帧”和“业务消息解析”分开学习。</p>
+ * <p>当前阶段已经接入消息头和 Protobuf 编解码，但还没有接入登录等业务分发器。
+ * 这样可以先通过协议测试确认字节层正确，再把解码后的 {@code GameMessage} 投递给
+ * Session 和 Scene。</p>
  */
 final class GameChannelInitializer extends ChannelInitializer<SocketChannel> {
     /** 单帧最大长度，防止客户端通过超大长度字段消耗服务端内存。 */
@@ -41,5 +44,9 @@ final class GameChannelInitializer extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
         pipeline.addLast(new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 10, 4, 0, 0));
+        // 前一个处理器只负责恢复完整帧；这里负责读取消息头并解析 Protobuf body。
+        pipeline.addLast(new GameMessageDecoder());
+        // 出站时将 GameMessage 编码为“14 字节 header + Protobuf body”。
+        pipeline.addLast(new GameMessageEncoder());
     }
 }
