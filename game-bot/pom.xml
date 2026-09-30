@@ -7,5 +7,8 @@
     <artifactId>game-bot</artifactId>
     <dependencies>
         <dependency><groupId>com.legendary.game</groupId><artifactId>game-protocol</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>com.legendary.game</groupId><artifactId>game-network</artifactId><version>${project.version}</version></dependency>
+        <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-simple</artifactId><version>${slf4j.version}</version></dependency>
     </dependencies>
+    <build><plugins><plugin><groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.5.0</version><configuration><mainClass>com.legendary.game.bot.GameBotApplication</mainClass></configuration></plugin></plugins></build>
 </project>
